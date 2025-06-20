@@ -87,7 +87,7 @@ class MainActivity : ComponentActivity() {
                         ) { backStackEntry ->
                             val userId = backStackEntry.arguments?.getString("userId")
                             TechnicianMenuScreen(
-                                onRegisterIncidentsClick = { navController.navigate("registerIncident") },
+                                onRegisterIncidentsClick = { navController.navigate("registerIncidents") },
                                 onAssignedIncidentsClick = { id -> navController.navigate("assignedIncidents/$id") }, // Pass userId
                                 onPendingIncidentsClick = { id -> navController.navigate("pendingIncidents/$id") }, // Pass userId
                                 onLogoutClick = { navController.navigate("login") }, // Navigate to login on logout

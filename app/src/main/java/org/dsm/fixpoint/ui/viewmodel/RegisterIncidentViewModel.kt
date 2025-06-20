@@ -1,6 +1,5 @@
 package org.dsm.fixpoint.ui.viewmodel
 
-
 import org.dsm.fixpoint.database.AppDatabase
 import org.dsm.fixpoint.database.entities.Incidente
 import android.app.Application
@@ -12,9 +11,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import org.dsm.fixpoint.database.entities.Usuario
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Locale
 
 class RegisterIncidentViewModel(application: Application) : AndroidViewModel(application) {
 
