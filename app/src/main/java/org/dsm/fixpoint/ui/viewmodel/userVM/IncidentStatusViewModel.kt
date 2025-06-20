@@ -69,3 +69,12 @@ class IncidentStatusViewModel(
     // This screen is for displaying status, so typically no click actions on individual cards
     // If you wanted to view incident details on click, you'd add a function here and pass it down.
 }
+
+
+
+
+
+
+
+
+
