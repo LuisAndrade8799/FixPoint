@@ -138,3 +138,6 @@ class RegisterIncidentViewModel(application: Application) : AndroidViewModel(app
         _description.value = ""
     }
 }
+
+
+
