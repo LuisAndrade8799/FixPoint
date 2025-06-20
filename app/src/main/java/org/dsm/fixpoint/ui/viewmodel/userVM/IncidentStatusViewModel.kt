@@ -1,70 +1,68 @@
 package org.dsm.fixpoint.ui.viewmodel.userVM
 
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import org.dsm.fixpoint.database.AppDatabase
+import org.dsm.fixpoint.database.entities.Incidente
 import org.dsm.fixpoint.model.Incident
+import org.dsm.fixpoint.ui.userUI.IncidentStatusScreen
+import org.dsm.fixpoint.ui.viewmodel.technicianVM.PendingIncidentsViewModel
 
-class IncidentStatusViewModel : ViewModel() {
+class IncidentStatusViewModel(
+    application: Application, // Necesita el contexto de la aplicación para la base de datos
+    private val name: String // Recibe el ID del técnico logueado
+) : AndroidViewModel(application) {
 
-    private val _incidentStatusList = MutableStateFlow<List<Incident>>(emptyList())
-    val incidentStatusList: StateFlow<List<Incident>> = _incidentStatusList
+    private val _assignedIncidents = MutableStateFlow<List<Incidente>>(emptyList()) // Cambiado a List<Incidente>
+    val assignedIncidents: StateFlow<List<Incidente>> = _assignedIncidents.asStateFlow()
+
+    // Database DAO
+    private val incidenteDao = AppDatabase.getDatabase(application).incidenteDao()
 
     init {
-        // In a real application, you would fetch all incidents related to the current user
-        // (or all incidents if this is for an admin view) from a repository/API here.
-        // For demonstration, we'll populate with dummy data including various statuses.
-        loadIncidentStatuses()
+        loadAssignedIncidents()
     }
 
-    private fun loadIncidentStatuses() {
+    // Function to load incidents assigned to the specific technician from the database
+    fun loadAssignedIncidents() {
         viewModelScope.launch {
-            // Simulate network call or database query for incident statuses
-            val dummyIncidents = listOf(
-                Incident("INC001", "Usuario A", "Ventas", "No funciona mouse.", /*"Sin atender"*/),
-                Incident("INC002", "Usuario B", "Marketing", "Falla de red.", /*"Asignado"*/),
-                Incident("INC003", "Usuario C", "Soporte", "Error de software.", /*"Pendiente"*/),
-                Incident(
-                    "INC004",
-                    "Usuario D",
-                    "Diseño",
-                    "Monitor no enciende.", /*"Solucionado"*/
-                ),
-                Incident(
-                    "INC005",
-                    "Usuario E",
-                    "Contabilidad",
-                    "Problema con impresora.", /*"Sin atender"*/
-                ),
-                Incident(
-                    "INC006",
-                    "Usuario F",
-                    "Recursos Humanos",
-                    "Configuración de email.", /*"Asignado"*/
-                ),
-                Incident(
-                    "INC007",
-                    "Usuario G",
-                    "Finanzas",
-                    "Acceso a sistema lento.", /*"Pendiente"*/
-                ),
-                Incident("INC008", "Usuario H", "IT", "Fallo de servidor.", /*"Solucionado"*/),
-                Incident(
-                    "INC009",
-                    "Usuario I",
-                    "Legal",
-                    "Error en aplicación web.", /*"Pendiente"*/
-                ),
-                Incident(
-                    "INC010",
-                    "Usuario J",
-                    "Logística",
-                    "Problema con escáner.", /*"Solucionado"*/
-                )
-            )
-            _incidentStatusList.value = dummyIncidents
+            try {
+                // Fetch incidents where codigoTecnico matches the loggedInTechnicianId
+                incidenteDao.getIncidentesByUsuario(name).collect { incidents ->
+                    _assignedIncidents.value = incidents
+                }
+            } catch (e: Exception) {
+                // Handle potential database errors (e.g., log, show error message)
+                println("Error loading assigned incidents: ${e.localizedMessage}")
+                // Optionally, clear the list or show an error state
+                _assignedIncidents.value = emptyList()
+            }
+        }
+    }
+
+    fun onAttendClick(incidentCode: Int) {
+        // This function will be called when an "Atender" button is clicked for a specific incident.
+        // It should only pass the incident's code (ID) for further processing (e.g., navigating to a detail screen).
+        println("Atender button clicked for Incident Code: $incidentCode")
+        // No modification to the list here, as attending will happen on another screen
+        // and then loadAssignedIncidents() will refresh the list (if status changes).
+    }
+
+    // Factory for creating AssignedIncidentsViewModel with a custom constructor
+    class Factory(private val application: Application, private val name: String) : ViewModelProvider.Factory {
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+            if (modelClass.isAssignableFrom(IncidentStatusViewModel::class.java)) {
+                @Suppress("UNCHECKED_CAST")
+                return IncidentStatusViewModel(application, name) as T
+            }
+            throw IllegalArgumentException("Unknown ViewModel class")
         }
     }
 

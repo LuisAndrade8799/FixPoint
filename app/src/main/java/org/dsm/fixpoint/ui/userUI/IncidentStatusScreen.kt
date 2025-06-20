@@ -1,5 +1,6 @@
 package org.dsm.fixpoint.ui.userUI
 
+import android.app.Application
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -14,22 +15,32 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import org.dsm.fixpoint.database.entities.Incidente
 import org.dsm.fixpoint.model.Incident
+import org.dsm.fixpoint.ui.technicianUI.IncidentAssignedCard
 import org.dsm.fixpoint.ui.theme.FixPointTheme
+import org.dsm.fixpoint.ui.viewmodel.technicianVM.PendingIncidentsViewModel
 import org.dsm.fixpoint.ui.viewmodel.userVM.IncidentStatusViewModel
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun IncidentStatusScreen(
-    incidentStatusViewModel: IncidentStatusViewModel = viewModel(),
-    onBackClick: () -> Unit = {} // Lambda for back button navigation
+    onBackClick: () -> Unit = {}, // Lambda for back button navigation
+    name: String? = null
 ) {
-    val incidents by incidentStatusViewModel.incidentStatusList.collectAsState()
+    val context = LocalContext.current
+    val application = context.applicationContext as Application
+    val name = name?.toString() // Convert userId to Int, default to 0 if null or invalid
+    val incidentStatusViewModel: IncidentStatusViewModel = viewModel(
+        factory = IncidentStatusViewModel.Factory(application, name.toString())
+    )
+    val incidents by incidentStatusViewModel.assignedIncidents.collectAsState()
 
     Scaffold(
         topBar = {
@@ -49,28 +60,22 @@ fun IncidentStatusScreen(
         },
         containerColor = Color(0xFFEEEEEE) // Light gray background for the content area
     ) { paddingValues ->
-        LazyColumn(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .padding(paddingValues) // Apply padding from Scaffold
                 .padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp), // Space between incident cards
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            items(incidents.chunked(2)) { rowIncidents -> // Chunk incidents into pairs for two columns
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceAround // Distribute cards evenly
+            if (incidents.isEmpty()) {
+                Text("No hay incidencias asignadas.", modifier = Modifier.padding(16.dp))
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(bottom = 16.dp)
                 ) {
-                    rowIncidents.forEach { incident ->
-                        IncidentStatusCard( // Specific card for status display
-                            incident = incident,
-                            modifier = Modifier.weight(1f) // Each card takes equal weight in the row
-                        )
-                    }
-                    // If there's an odd number of incidents, add an empty space for alignment
-                    if (rowIncidents.size == 1) {
-                        Spacer(modifier = Modifier.weight(1f))
+                    items(incidents) { incident ->
+                        IncidentStatusCard(incident = incident)
                     }
                 }
             }
@@ -80,7 +85,7 @@ fun IncidentStatusScreen(
 
 @Composable
 fun IncidentStatusCard(
-    incident: Incident,
+    incident: Incidente,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -99,37 +104,42 @@ fun IncidentStatusCard(
                 .fillMaxWidth()
         ) {
             Text(
-                text = "Código de incidencia: ${incident.id}",
+                text = "Código de incidencia: ${incident.codigo}",
                 fontSize = 14.sp,
                 color = Color.Black,
                 modifier = Modifier.padding(bottom = 4.dp)
             )
             Text(
-                text = "Nombre de usuario: ${incident.username}",
+                text = "Nombre de usuario: ${incident.nombreUsuario}",
                 fontSize = 12.sp,
                 color = Color.DarkGray,
                 modifier = Modifier.padding(bottom = 4.dp)
             )
             Text(
-                text = "Area del usuario: ${incident.userArea}",
+                text = "Area del usuario: ${incident.areaDeUsuario}",
                 fontSize = 12.sp,
                 color = Color.DarkGray,
                 modifier = Modifier.padding(bottom = 4.dp)
             )
             Text(
-                text = "Descripción de la incidencia: ${incident.description}",
+                text = "Descripción de la incidencia: ${incident.descripcion}",
                 fontSize = 12.sp,
                 color = Color.DarkGray,
                 modifier = Modifier.padding(bottom = 4.dp)
             )
-            /*
             Text(
-                text = "Estado: ${incident.status}", // Displaying the status
+                text = "Código de Equipo: ${incident.codigoEquipo}", // Acceder a 'codigoEquipo'
+                fontSize = 12.sp,
+                color = Color.DarkGray,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            Text(
+                text = "Estado: ${incident.estado}", // Displaying the status
                 fontSize = 12.sp,
                 color = Color.DarkGray,
                 modifier = Modifier.padding(bottom = 4.dp)
             )
-             */
+
         }
     }
 }

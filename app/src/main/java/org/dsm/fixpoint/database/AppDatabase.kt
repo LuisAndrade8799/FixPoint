@@ -76,7 +76,7 @@ abstract class AppDatabase : RoomDatabase() {
                     val incidenteDao = database.incidenteDao()
                     // Add initial incidents here
                     val incidente1 = Incidente(
-                        nombreUsuario = "Usuario1",
+                        nombreUsuario = "Usuario General",
                         areaDeUsuario = "Area1",
                         descripcion = "Descripción de la incidencia 1",
                         estado = "Sin atender",
@@ -84,7 +84,7 @@ abstract class AppDatabase : RoomDatabase() {
                         codigoEquipo = "Equipo1"
                     )
                     val incidente2 = Incidente(
-                        nombreUsuario = "Usuario2",
+                        nombreUsuario = "Usuario General",
                         areaDeUsuario = "Area2",
                         descripcion = "Descripción de la incidencia 2",
                         estado = "Sin atender",
@@ -93,7 +93,7 @@ abstract class AppDatabase : RoomDatabase() {
                     )
 
                     val incidente3 = Incidente(
-                        nombreUsuario = "Usuario3",
+                        nombreUsuario = "Usuario General 2",
                         areaDeUsuario = "Area3",
                         descripcion = "Descripción de la incidencia 3",
                         estado = "Sin atender",
@@ -102,7 +102,7 @@ abstract class AppDatabase : RoomDatabase() {
                     )
 
                     val incidente4 = Incidente(
-                        nombreUsuario = "Usuario4",
+                        nombreUsuario = "Usuario General 2",
                         areaDeUsuario = "Area4",
                         descripcion = "Descripción de la incidencia 4",
                         estado = "Sin atender",
@@ -111,7 +111,7 @@ abstract class AppDatabase : RoomDatabase() {
                     )
 
                     val incidente5 = Incidente(
-                        nombreUsuario = "Usuario5",
+                        nombreUsuario = "Usuario General 3",
                         areaDeUsuario = "Area5",
                         descripcion = "Descripción de la incidencia 5",
                         estado = "Sin atender",
@@ -120,7 +120,7 @@ abstract class AppDatabase : RoomDatabase() {
                     )
 
                     val incidente6 = Incidente(
-                        nombreUsuario = "Usuario6",
+                        nombreUsuario = "Usuario General 4",
                         areaDeUsuario = "Area6",
                         descripcion = "Descripción de la incidencia 6",
                         estado = "Sin atender",
@@ -129,7 +129,7 @@ abstract class AppDatabase : RoomDatabase() {
                     )
 
                     val incidente7 = Incidente(
-                        nombreUsuario = "Usuario7",
+                        nombreUsuario = "Usuario General 4",
                         areaDeUsuario = "Area7",
                         descripcion = "Descripción de la incidencia 7",
                         estado = "Sin atender",

@@ -57,7 +57,10 @@ class MainActivity : ComponentActivity() {
                                             val userId = loginViewModel.loggedInUserId.value// Get the logged-in username as userId
                                             navController.navigate("technicianMenu/$userId")
                                         }
-                                        "comun" -> navController.navigate("userMenu") { popUpTo("login") { inclusive = true } }
+                                        "comun" ->{
+                                            val userName = loginViewModel.name.value
+                                            navController.navigate("userMenu/$userName") { popUpTo("login") { inclusive = true } }
+                                        }
                                     }
                                 }
                             )
@@ -91,10 +94,13 @@ class MainActivity : ComponentActivity() {
                                 userId = userId // Pass userId to the Composable
                             )
                         }
-                        composable("userMenu") {
+                        composable("userMenu/{userName}",
+                            arguments = listOf(navArgument("userName") {type = NavType.StringType  })
+                        ) {backStackEntry ->
+                            val userName = backStackEntry.arguments?.getString("userName")
                             UserMenuScreen(
                                 onRegisterIncidentsClick = { navController.navigate("registerIncidents") },
-                                onIncidentStatusClick = { navController.navigate("incidentStatus") },
+                                onIncidentStatusClick = {name -> navController.navigate("incidentStatus/$name") },
                                 onLogoutClick = {
                                     // Implement logout logic here:
                                     // 1. Clear any stored user session data (e.g., in a ViewModel or SharedPreferences)
@@ -104,7 +110,8 @@ class MainActivity : ComponentActivity() {
                                             inclusive = true // Clears the back stack up to the login screen
                                         }
                                     }
-                                }
+                                },
+                                userName = userName
                             )
                         }
                         composable("registerIncidents") {
@@ -174,8 +181,14 @@ class MainActivity : ComponentActivity() {
                                 onBackClick = { navController.popBackStack() }
                             )
                         }
-                        composable("incidentStatus") {
-                            IncidentStatusScreen(onBackClick = { navController.popBackStack() })
+                        composable("incidentStatus/{name}",
+                            arguments = listOf(navArgument("name") {type = NavType.StringType  })
+                        ) {backStackEntry ->
+                            val name = backStackEntry.arguments?.getString("name")
+                            IncidentStatusScreen(
+                                onBackClick = { navController.popBackStack() },
+                                name = name
+                            )
                         }
                     }
                 }

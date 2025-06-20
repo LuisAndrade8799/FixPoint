@@ -26,8 +26,9 @@ import org.dsm.fixpoint.R
 @Composable
 fun UserMenuScreen(
     onRegisterIncidentsClick: () -> Unit = {},
-    onIncidentStatusClick: () -> Unit = {},
-    onLogoutClick: () -> Unit = {} // NEW: Logout click lambda
+    onIncidentStatusClick: (String) -> Unit = {},
+    onLogoutClick: () -> Unit = {}, // NEW: Logout click lambda
+    userName: String? = null
 ) {
     Box(
         modifier = Modifier
@@ -94,7 +95,7 @@ fun UserMenuScreen(
 
             // Button for Estado de Incidencias
             Button(
-                onClick = onIncidentStatusClick,
+                onClick ={userName?.let { onIncidentStatusClick(it) }} ,
                 modifier = Modifier
                     .fillMaxWidth(0.8f) // Adjust width as needed
                     .height(60.dp)

@@ -20,6 +20,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import org.dsm.fixpoint.database.entities.Incidente
 import org.dsm.fixpoint.model.Incident
 import org.dsm.fixpoint.ui.theme.FixPointTheme
 import org.dsm.fixpoint.ui.viewmodel.technicianVM.AssignedIncidentsViewModel
@@ -76,7 +77,7 @@ fun PendingIncidentsScreen(
                     contentPadding = PaddingValues(bottom = 16.dp)
                 ) {
                     items(incidents) { incident ->
-                        IncidentAssignedCard(incident = incident, onAttendClick = onAttendClick)
+                        PendingIncidentCard(incident = incident, onAttendClick = onAttendClick)
                     }
                 }
             }
@@ -86,8 +87,8 @@ fun PendingIncidentsScreen(
 
 @Composable
 fun PendingIncidentCard( // Renamed from AssignedIncidentCard
-    incident: Incident,
-    onAttendClick: (Incident) -> Unit,
+    incident: Incidente,
+    onAttendClick: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -106,32 +107,46 @@ fun PendingIncidentCard( // Renamed from AssignedIncidentCard
                 .fillMaxWidth()
         ) {
             Text(
-                text = "Código de incidencia: ${incident.id}",
+                text = "Código de incidencia: ${incident.codigo}",
                 fontSize = 14.sp,
                 color = Color.Black,
                 modifier = Modifier.padding(bottom = 4.dp)
             )
             Text(
-                text = "Nombre de usuario: ${incident.username}",
+                text = "Nombre de usuario: ${incident.nombreUsuario}",
                 fontSize = 12.sp,
                 color = Color.DarkGray,
                 modifier = Modifier.padding(bottom = 4.dp)
             )
             Text(
-                text = "Area del usuario: ${incident.userArea}",
+                text = "Area del usuario: ${incident.areaDeUsuario}",
                 fontSize = 12.sp,
                 color = Color.DarkGray,
                 modifier = Modifier.padding(bottom = 4.dp)
             )
             Text(
-                text = "Descripción de la incidencia: ${incident.description}",
+                text = "Descripción de la incidencia: ${incident.descripcion}",
                 fontSize = 12.sp,
                 color = Color.DarkGray,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
-
+            Text(
+                text = "Código de Equipo: ${incident.codigoEquipo}", // Acceder a 'codigoEquipo'
+                fontSize = 12.sp,
+                color = Color.DarkGray,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            Text(
+                text = "Estado: ${incident.estado}", // Mostrar el estado
+                fontSize = 12.sp,
+                color = Color.DarkGray,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            incident.codigoTecnico?.let { techCode ->
+                Text(text = "Asignado a (Código): $techCode", fontSize = 12.sp, color = Color.Blue)
+            }
             Button(
-                onClick = { onAttendClick(incident) },
+                onClick = { onAttendClick(incident.codigo) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(40.dp),

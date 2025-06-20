@@ -17,6 +17,9 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
     private val _loggedInUserId = MutableStateFlow<Int?>(null)
     val loggedInUserId: StateFlow<Int?> = _loggedInUserId
 
+    private val _name = MutableStateFlow("")
+    val name: StateFlow<String> = _name
+
     private val _username = MutableStateFlow("")
     val username: StateFlow<String> = _username
 
@@ -82,6 +85,8 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
                     _loginMessage.value = "Inicio de sesión exitoso como ${user.tipo}!"
                     _loggedInUserRole.value = user.tipo // Set the user's role
                     _loggedInUserId.value = user.codigo
+                    _name.value = user.nombre
+
                 } else {
                     _loginMessage.value = "Usuario o contraseña incorrectos."
                 }
