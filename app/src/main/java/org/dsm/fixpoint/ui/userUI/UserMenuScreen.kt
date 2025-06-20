@@ -21,6 +21,8 @@ import org.dsm.fixpoint.ui.theme.FixPointTheme
 import org.dsm.fixpoint.R
 
 
+
+
 @Composable
 fun UserMenuScreen(
     onRegisterIncidentsClick: () -> Unit = {},
@@ -142,6 +144,7 @@ fun UserMenuScreen(
         }
     }
 }
+
 
 @Preview(showBackground = true)
 @Composable

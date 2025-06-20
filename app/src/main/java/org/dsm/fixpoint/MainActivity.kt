@@ -29,6 +29,7 @@ import org.dsm.fixpoint.ui.userUI.IncidentStatusScreen
 import org.dsm.fixpoint.ui.userUI.UserMenuScreen
 import org.dsm.fixpoint.ui.viewmodel.*
 
+//Main
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -182,4 +183,9 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
+//FinActivity
+
+
+
+
 
