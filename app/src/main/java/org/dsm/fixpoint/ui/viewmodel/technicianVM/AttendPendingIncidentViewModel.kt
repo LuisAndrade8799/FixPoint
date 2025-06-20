@@ -119,3 +119,6 @@ class AttendPendingIncidentViewModel(application: Application
 
     // No onPendingClick method as per image_1ac341.png
 }
+
+
+
