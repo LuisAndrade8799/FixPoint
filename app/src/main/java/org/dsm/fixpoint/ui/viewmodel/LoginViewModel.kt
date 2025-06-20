@@ -8,7 +8,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import org.dsm.fixpoint.database.AppDatabase
-import org.dsm.fixpoint.database.entities.Usuario
 
 // Change ViewModel() to AndroidViewModel(application: Application)
 class LoginViewModel(application: Application) : AndroidViewModel(application) {
