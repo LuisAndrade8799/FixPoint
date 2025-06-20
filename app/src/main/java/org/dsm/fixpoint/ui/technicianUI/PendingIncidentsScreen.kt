@@ -85,6 +85,9 @@ fun PendingIncidentsScreen(
     }
 }
 
+
+
+
 @Composable
 fun PendingIncidentCard( // Renamed from AssignedIncidentCard
     incident: Incidente,
