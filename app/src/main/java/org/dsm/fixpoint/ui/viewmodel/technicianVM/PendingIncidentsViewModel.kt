@@ -11,7 +11,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.dsm.fixpoint.database.AppDatabase
 import org.dsm.fixpoint.database.entities.Incidente
-import org.dsm.fixpoint.model.Incident
 
 class PendingIncidentsViewModel(
     application: Application, // Necesita el contexto de la aplicación para la base de datos

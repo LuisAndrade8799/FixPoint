@@ -21,7 +21,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.dsm.fixpoint.database.entities.Incidente
-import org.dsm.fixpoint.model.Incident
 import org.dsm.fixpoint.ui.technicianUI.IncidentAssignedCard
 import org.dsm.fixpoint.ui.theme.FixPointTheme
 import org.dsm.fixpoint.ui.viewmodel.technicianVM.PendingIncidentsViewModel

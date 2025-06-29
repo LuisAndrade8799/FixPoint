@@ -12,7 +12,6 @@ import kotlinx.coroutines.launch
 import org.dsm.fixpoint.database.AppDatabase
 import org.dsm.fixpoint.database.dao.IncidenteDao
 import org.dsm.fixpoint.database.entities.Incidente
-import org.dsm.fixpoint.model.Incident
 
 class AttendPendingIncidentViewModel(application: Application
 ) : AndroidViewModel(application){
