@@ -3,10 +3,12 @@ package org.dsm.fixpoint.ui.viewmodel
 import android.app.Application // Import Application
 import androidx.lifecycle.AndroidViewModel // Change ViewModel to AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import org.dsm.fixpoint.database.AppDatabase
 
 // Change ViewModel() to AndroidViewModel(application: Application)
@@ -22,6 +24,9 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
     private val _username = MutableStateFlow("")
     val username: StateFlow<String> = _username
 
+    private val _isCorreo = MutableStateFlow(false)
+    val isCorreo: StateFlow<Boolean> = _isCorreo
+
     private val _password = MutableStateFlow("")
     val password: StateFlow<String> = _password
 
@@ -36,6 +41,7 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
     private val _loggedInUserRole = MutableStateFlow<String?>(null)
     val loggedInUserRole: StateFlow<String?> = _loggedInUserRole
 
+    private val firebaseAuth : FirebaseAuth = FirebaseAuth.getInstance()
     // Get an instance of your AppDatabase and then the UsuarioDao
     private val userDao = AppDatabase.getDatabase(application).usuarioDao()
 
@@ -50,10 +56,19 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    private fun checkCorreo(newUsername: String):Boolean{
+        val emailRegex = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$".toRegex()
+        return emailRegex.matches(newUsername)
+    }
     fun onUsernameChange(newUsername: String) {
-        _username.value = newUsername
-        _loginMessage.value = null // Clear message when user starts typing again
-        _loggedInUserRole.value = null // Clear role when user starts typing again
+        if (checkCorreo(newUsername)){
+            _username.value = newUsername
+            _loginMessage.value = null // Clear message when user starts typing again
+            _loggedInUserRole.value = null // Clear role when user starts typing again
+        }else{
+            _username.value = ""
+        }
+
     }
 
     fun onPasswordChange(newPassword: String) {
@@ -77,22 +92,28 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
 
         viewModelScope.launch {
             try {
-                // Use the login method from your UsuarioDao
-                val user = userDao.login(currentUsername, currentPassword)
+                // Use Firebase Auth to sign in with email and password
+                val result = firebaseAuth.signInWithEmailAndPassword(currentUsername, currentPassword).await()
 
-                if (user != null) {
-                    _loginMessage.value = "Inicio de sesión exitoso como ${user.tipo}!"
-                    _loggedInUserRole.value = user.tipo // Set the user's role
-                    _loggedInUserId.value = user.codigo
-                    _name.value = user.nombre
-
+                if (result.user != null) {
+                    _loginMessage.value = "Inicio de sesión exitoso!"
+                    // You might fetch additional user data (like role) from Firestore or a Realtime Database here
+                    // For now, setting a placeholder role or fetching from a custom claim if you've set them up.
+                    _loggedInUserRole.value = "usuario_firebase" // Placeholder role
+                    _loggedInUserId.value = result.user?.uid.hashCode() // Using UID hash as an example ID
+                    _name.value = result.user?.displayName ?: currentUsername.substringBefore("@") // Use display name or part of email
                 } else {
-                    _loginMessage.value = "Usuario o contraseña incorrectos."
+                    _loginMessage.value = "Error en el inicio de sesión. Credenciales incorrectas."
                 }
             } catch (e: Exception) {
-                // Handle potential database errors (e.g., database not found, connection issues)
-                _loginMessage.value = "Error al intentar iniciar sesión: ${e.localizedMessage ?: "Error desconocido"}"
-                e.printStackTrace() // Log the exception for debugging
+                // Handle Firebase Authentication specific errors
+                val errorMessage = when (e) {
+                    is com.google.firebase.auth.FirebaseAuthInvalidUserException -> "No hay cuenta registrada con este correo electrónico."
+                    is com.google.firebase.auth.FirebaseAuthInvalidCredentialsException -> "Contraseña incorrecta o correo electrónico inválido."
+                    else -> "Error al intentar iniciar sesión: ${e.localizedMessage ?: "Error desconocido"}"
+                }
+                _loginMessage.value = errorMessage
+                e.printStackTrace()
             }
         }
     }

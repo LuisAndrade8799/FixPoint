@@ -16,7 +16,6 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import kotlinx.coroutines.launch
 import org.dsm.fixpoint.ui.theme.FixPointTheme
 import org.dsm.fixpoint.R
 import org.dsm.fixpoint.ui.viewmodel.LoginViewModel
@@ -32,7 +31,8 @@ fun LoginScreen(
     val password by loginViewModel.password.collectAsState()
     val loginEnabled by loginViewModel.loginEnabled.collectAsState()
     val userRole by loginViewModel.loggedInUserRole.collectAsState()
-    val loginMessage by loginViewModel.loginMessage.collectAsState() // Observe login messages
+    val loginMessage by loginViewModel.loginMessage.collectAsState()
+    val isCorreo by loginViewModel.isCorreo.collectAsState()// Observe login messages
 
     val snackbarHostState = remember { SnackbarHostState() } // For showing messages
 
@@ -43,9 +43,6 @@ fun LoginScreen(
     LaunchedEffect(userRole) {
         userRole?.let { role ->
             onLoginSuccess(role)
-            // Optionally, clear the userRole in the ViewModel after navigation
-            // to prevent re-triggering navigation if the screen is recomposed
-            // loginViewModel.clearUserRole() // You would add this function to your ViewModel
         }
     }
 
@@ -84,6 +81,7 @@ fun LoginScreen(
                 onValueChange = { loginViewModel.onUsernameChange(it) },
                 label = { Text("Usuario") },
                 singleLine = true,
+                isError = isCorreo,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 8.dp),
@@ -108,7 +106,6 @@ fun LoginScreen(
             Button(
                 onClick = {
                     loginViewModel.onLoginClick()
-
                 },
                 enabled = loginEnabled,
                 modifier = Modifier
