@@ -1,27 +1,28 @@
 package org.dsm.fixpoint.ui.viewmodel.technicianVM
 
 import android.app.Application
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import org.dsm.fixpoint.database.AppDatabase
+import kotlinx.coroutines.tasks.await
 import org.dsm.fixpoint.database.entities.Incidente // Import the Incidente entity
 
 class AssignedIncidentsViewModel(
     application: Application, // Necesita el contexto de la aplicación para la base de datos
-    private val loggedInTechnicianId: Int // Recibe el ID del técnico logueado
+    private val loggedInTechnicianId: String // Recibe el ID del técnico logueado
 ) : AndroidViewModel(application) { // Cambiado a AndroidViewModel
 
     private val _assignedIncidents = MutableStateFlow<List<Incidente>>(emptyList()) // Cambiado a List<Incidente>
     val assignedIncidents: StateFlow<List<Incidente>> = _assignedIncidents.asStateFlow()
 
-    // Database DAO
-    private val incidenteDao = AppDatabase.getDatabase(application).incidenteDao()
+    private val firestore : FirebaseFirestore = FirebaseFirestore.getInstance()
 
     init {
         loadAssignedIncidents()
@@ -31,15 +32,34 @@ class AssignedIncidentsViewModel(
     fun loadAssignedIncidents() {
         viewModelScope.launch {
             try {
-                // Fetch incidents where codigoTecnico matches the loggedInTechnicianId
-                incidenteDao.getIncidentsByTechnician(loggedInTechnicianId).collect { incidents ->
-                    val filtrado = incidents.filter{it.estado == "Asignado"}
-                    _assignedIncidents.value = filtrado
+                val result = firestore.collection("incidente")
+                    .whereEqualTo("codigoTecnico", loggedInTechnicianId)
+                    .whereEqualTo("estado","Sin atender")
+                    .get()
+                    .await()
+
+                val incidentesList = result.documents.mapNotNull { document ->
+                    try {
+                        Incidente(
+                            areaUsuario = document.getString("areaUsuario") ?: "",
+                            codigo = document.getString("codigo") ?: "",
+                            nombreEquipo = document.getString("nombreEquipo") ?: "",
+                            codigoTecnico = document.getString("codigoTecnico"),
+                            descripcion = document.getString("descripcion") ?: "",
+                            estado = document.getString("estado") ?: "",
+                            nombreUsuario = document.getString("nombreUsuario") ?: ""
+                        )
+                    } catch (e: Exception) {
+                        Log.e("IncidenteViewModel", "Error al mapear documento a Incidente: ${document.id}", e)
+                        null
+                    }
                 }
+                _assignedIncidents.value = incidentesList
+                Log.d("IncidenteViewModel", "Incidentes asignados al técnico $loggedInTechnicianId: ${incidentesList.size}")
+
             } catch (e: Exception) {
-                // Handle potential database errors (e.g., log, show error message)
-                println("Error loading assigned incidents: ${e.localizedMessage}")
-                // Optionally, clear the list or show an error state
+                val message = "Error al obtener incidentes asignados: ${e.localizedMessage ?: "Error desconocido"}"
+                Log.e("IncidenteViewModel", message, e)
                 _assignedIncidents.value = emptyList()
             }
         }
@@ -54,7 +74,7 @@ class AssignedIncidentsViewModel(
     }
 
     // Factory for creating AssignedIncidentsViewModel with a custom constructor
-    class Factory(private val application: Application, private val technicianId: Int) : ViewModelProvider.Factory {
+    class Factory(private val application: Application, private val technicianId: String) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             if (modelClass.isAssignableFrom(AssignedIncidentsViewModel::class.java)) {
                 @Suppress("UNCHECKED_CAST")

@@ -23,7 +23,7 @@ import org.dsm.fixpoint.ui.viewmodel.technicianVM.AttendIncidentViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AttendIncidentScreen(
-    incidentId: String? = "0", // Changed to Int?
+    incidentId: String, // Changed to Int?
     onBackClick: () -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -42,14 +42,11 @@ fun AttendIncidentScreen(
 
     // Set the incident ID from navigation arguments once when the screen starts
     LaunchedEffect(incidentId) {
-        attendIncidentViewModel.setIncidentId(incidentId?.toIntOrNull())
+        attendIncidentViewModel.setIncidentId(incidentId)
     }
 
     // Collect UI state from ViewModel
-    val incidentCode by attendIncidentViewModel.incidentCode.collectAsState()
-    val username by attendIncidentViewModel.username.collectAsState()
-    val userArea by attendIncidentViewModel.userArea.collectAsState()
-    val description by attendIncidentViewModel.description.collectAsState()
+    val incidente by attendIncidentViewModel.incident.collectAsState()
     val statusMessage by attendIncidentViewModel.statusMessage.collectAsState()
 
     val snackbarHostState = remember { SnackbarHostState() }
@@ -90,7 +87,7 @@ fun AttendIncidentScreen(
         ) {
             // "Código de incidencia" Field (Read-only)
             OutlinedTextField(
-                value = incidentCode, // Now comes from ViewModel
+                value = incidente?.codigo ?: "", // Now comes from ViewModel
                 onValueChange = { /* Read-only */ },
                 label = { Text("Código de incidencia:") },
                 readOnly = true,
@@ -101,7 +98,7 @@ fun AttendIncidentScreen(
 
             // "Nombre de usuario" Field (Read-only)
             OutlinedTextField(
-                value = username,
+                value = incidente?.nombreUsuario ?: "",
                 onValueChange = { /* Read-only */ },
                 label = { Text("Nombre de usuario:") },
                 readOnly = true,
@@ -112,7 +109,7 @@ fun AttendIncidentScreen(
 
             // "Area del usuario" Field (Read-only)
             OutlinedTextField(
-                value = userArea,
+                value = incidente?.areaUsuario ?: "",
                 onValueChange = { /* Read-only */ },
                 label = { Text("Area del usuario:") },
                 readOnly = true,
@@ -123,7 +120,7 @@ fun AttendIncidentScreen(
 
             // "Descripción" Field (Potentially editable for technician notes/solution)
             OutlinedTextField(
-                value = description,
+                value = incidente?.descripcion ?: "",
                 onValueChange = { attendIncidentViewModel.onDescriptionChange(it) },
                 label = { Text("Descripción:") },
                 modifier = Modifier
@@ -175,6 +172,6 @@ fun AttendIncidentScreen(
 @Composable
 fun PreviewAttendIncidentScreen() {
     FixPointTheme {
-        AttendIncidentScreen() // Pass a dummy Int ID for preview
+        AttendIncidentScreen("") // Pass a dummy Int ID for preview
     }
 }

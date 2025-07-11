@@ -43,13 +43,11 @@ fun AttendPendingIncidentScreen(
         }
     )
     LaunchedEffect(incidentId) {
-        attendPendingIncidentViewModel.setIncidentId(incidentId?.toIntOrNull())
+        attendPendingIncidentViewModel.setIncidentId(incidentId)
     }
     // Collect UI state from ViewModel
-    val incidentCode by attendPendingIncidentViewModel.incidentCode.collectAsState()
-    val username by attendPendingIncidentViewModel.username.collectAsState()
-    val userArea by attendPendingIncidentViewModel.userArea.collectAsState()
-    val description by attendPendingIncidentViewModel.description.collectAsState() // This might be editable
+    val incidente by attendPendingIncidentViewModel.incident.collectAsState()
+     // This might be editable
     val statusMessage by attendPendingIncidentViewModel.statusMessage.collectAsState()
 
     val snackbarHostState = remember { SnackbarHostState() }
@@ -92,7 +90,7 @@ fun AttendPendingIncidentScreen(
         ) {
             // "Código de incidencia" Field (Read-only)
             OutlinedTextField(
-                value = incidentCode,
+                value = incidente?.codigo ?:"",
                 onValueChange = { /* Read-only */ },
                 label = { Text("Código de incidencia:") },
                 readOnly = true,
@@ -104,7 +102,7 @@ fun AttendPendingIncidentScreen(
 
             // "Nombre de usuario" Field (Read-only)
             OutlinedTextField(
-                value = username,
+                value = incidente?.nombreUsuario ?: "",
                 onValueChange = { /* Read-only */ },
                 label = { Text("Nombre de usuario:") },
                 readOnly = true,
@@ -116,7 +114,7 @@ fun AttendPendingIncidentScreen(
 
             // "Area del usuario" Field (Read-only)
             OutlinedTextField(
-                value = userArea,
+                value = incidente?.areaUsuario ?: "",
                 onValueChange = { /* Read-only */ },
                 label = { Text("Area del usuario:") },
                 readOnly = true,
@@ -129,7 +127,7 @@ fun AttendPendingIncidentScreen(
 
             // "Descripción" Field (Potentially editable for technician notes/solution)
             OutlinedTextField(
-                value = description,
+                value = incidente?.descripcion ?: "",
                 onValueChange = { attendPendingIncidentViewModel.onDescriptionChange(it) }, // Allow editing
                 label = { Text("Descripción:") },
                 modifier = Modifier

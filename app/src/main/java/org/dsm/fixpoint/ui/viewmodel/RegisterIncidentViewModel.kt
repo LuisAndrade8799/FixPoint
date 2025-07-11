@@ -1,15 +1,17 @@
 package org.dsm.fixpoint.ui.viewmodel
 
-import org.dsm.fixpoint.database.AppDatabase
 import org.dsm.fixpoint.database.entities.Incidente
 import android.app.Application
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import org.dsm.fixpoint.database.entities.Usuario
 
 class RegisterIncidentViewModel(application: Application) : AndroidViewModel(application) {
@@ -21,7 +23,7 @@ class RegisterIncidentViewModel(application: Application) : AndroidViewModel(app
     val username: StateFlow<String> = _username
 
     private val _userArea = MutableStateFlow("")
-    val userArea: StateFlow<String> = _userArea
+    val userArea: StateFlow<String> = _userArea.asStateFlow()
 
     private val _description = MutableStateFlow("")
     val description: StateFlow<String> = _description
@@ -32,11 +34,10 @@ class RegisterIncidentViewModel(application: Application) : AndroidViewModel(app
     private val _incidentMessage = MutableStateFlow<String?>(null)
     val incidentMessage: StateFlow<String?> = _incidentMessage
 
+    private val firestore : FirebaseFirestore = FirebaseFirestore.getInstance()
+
     private val _technicians = MutableStateFlow<List<Usuario>>(emptyList())
     val technicians: StateFlow<List<Usuario>> = _technicians.asStateFlow()
-
-    private val incidenteDao = AppDatabase.getDatabase(application).incidenteDao()
-    private val usuarioDao = AppDatabase.getDatabase(application).usuarioDao()
 
     init {
         viewModelScope.launch {
@@ -57,18 +58,40 @@ class RegisterIncidentViewModel(application: Application) : AndroidViewModel(app
     private fun loadUser() {
         viewModelScope.launch {
             try {
-                usuarioDao.getUsersByType("comun").collect { techList ->
-                    _technicians.value = techList
+                val result = firestore.collection("usuario")
+                    .whereEqualTo("tipo", "comun") // Busca documentos donde el campo 'tipo' es 'tecnico'
+                    .get()
+                    .await()
+
+                val userList = result.documents.mapNotNull { document ->
+                    // Mapea el documento a tu clase de datos Usuario
+                    try {
+                        Usuario(
+                            idUsuario = document.getString("idUsuario") ?: "",
+                            nombre = document.getString("nombre") ?: "",
+                            tipo = document.getString("tipo") ?: "",
+                            area = document.getString("area") ?: ""
+                        )
+                    } catch (e: Exception) {
+                        Log.e("UserViewModel", "Error al mapear documento a Usuario: ${document.id}", e)
+                        null
+                    }
                 }
+                _technicians.value = userList
+                Log.d("UserViewModel", "Técnicos encontrados: ${userList.size}")
+
             } catch (e: Exception) {
-                println("Error loading technicians: ${e.localizedMessage}")
-                _technicians.value = emptyList()
+                Log.e("UserViewModel", "Error al obtener usuarios técnicos: ${e.message}", e)
+                _technicians.value = emptyList() // En caso de error, limpiar la lista
             }
         }
     }
 
     fun onTechnicianCodeChange(newCode: String) {
-        _username.value = newCode
+        val selectedTechnician = _technicians.value.find { it.idUsuario == newCode }
+        _username.value = selectedTechnician?.nombre ?: ""
+
+        _userArea.value = selectedTechnician?.area ?: ""
         // Auto-complete technician name when code changes
     }
 
@@ -100,29 +123,29 @@ class RegisterIncidentViewModel(application: Application) : AndroidViewModel(app
             _incidentMessage.value = "Por favor, complete todos los campos."
             return
         }
-
         viewModelScope.launch {
             try {
-                val newIncident = Incidente(
-                    nombreUsuario = _username.value,
-                    areaDeUsuario = _userArea.value,
+                // Generar un nuevo ID de documento automáticamente por Firestore
+                val newDocRef = firestore.collection("incidente").document()
+                val incidenteId = newDocRef.id // Obtener el ID generado automáticamente
+
+                // Crear el objeto Incidente con los valores predeterminados y proporcionados
+                val newIncidente = Incidente(
+                    areaUsuario = _userArea.value,
+                    codigo = incidenteId, // El campo 'codigo' se llenará con el ID del documento
+                    nombreEquipo = _equipmentCode.value,
+                    codigoTecnico = "", // Por defecto: vacío
                     descripcion = _description.value,
-                    estado = "Sin atender",
-                    codigoTecnico = null,
-                    codigoEquipo = _equipmentCode.value // Pass the equipment code
+                    estado = "Sin atender", // Por defecto: "Sin atender"
+                    nombreUsuario = _username.value
                 )
 
-                val incidentId = incidenteDao.insertIncidente(newIncident)
+                // Guardar el nuevo incidente en Firestore
+                newDocRef.set(newIncidente).await()
+                Log.d("IncidenteRegViewModel", "Nueva incidencia registrada: $incidenteId")
 
-                if (incidentId > 0) {
-                    _incidentMessage.value = "Incidencia registrada con éxito! Código: $incidentId"
-                    clearFields()
-                } else {
-                    _incidentMessage.value = "Error al registrar la incidencia."
-                }
             } catch (e: Exception) {
-                _incidentMessage.value = "Error de base de datos al registrar: ${e.localizedMessage ?: "Error desconocido"}"
-                e.printStackTrace()
+                Log.e("IncidenteRegViewModel", "Error al registrar nueva incidencia", e)
             }
         }
     }

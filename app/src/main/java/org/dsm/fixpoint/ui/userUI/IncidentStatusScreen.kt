@@ -115,7 +115,7 @@ fun IncidentStatusCard(
                 modifier = Modifier.padding(bottom = 4.dp)
             )
             Text(
-                text = "Area del usuario: ${incident.areaDeUsuario}",
+                text = "Area del usuario: ${incident.areaUsuario}",
                 fontSize = 12.sp,
                 color = Color.DarkGray,
                 modifier = Modifier.padding(bottom = 4.dp)
@@ -127,7 +127,7 @@ fun IncidentStatusCard(
                 modifier = Modifier.padding(bottom = 4.dp)
             )
             Text(
-                text = "Código de Equipo: ${incident.codigoEquipo}", // Acceder a 'codigoEquipo'
+                text = "Nombre de Equipo: ${incident.nombreEquipo}", // Acceder a 'codigoEquipo'
                 fontSize = 12.sp,
                 color = Color.DarkGray,
                 modifier = Modifier.padding(bottom = 8.dp)

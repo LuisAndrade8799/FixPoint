@@ -27,14 +27,14 @@ import android.app.Application // Import Application
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AssignedIncidentsScreen(
-    userId: String? = "0", // <-- Nuevo parámetro para el ID del técnico
+    userId: String, // <-- Nuevo parámetro para el ID del técnico
     // Remove direct ViewModel instantiation here, will be provided by ViewModelProvider
     onBackClick: () -> Unit = {}, // Lambda for back button navigation
-    onAttendClick: (Int) -> Unit = {} // Cambiado a Int para pasar el código del incidente
+    onAttendClick: (String) -> Unit = {} // Cambiado a Int para pasar el código del incidente
 ) {
     val context = LocalContext.current
     val application = context.applicationContext as Application
-    val technicianId = userId?.toIntOrNull() ?: 0 // Convert userId to Int, default to 0 if null or invalid
+    val technicianId = userId // Convert userId to Int, default to 0 if null or invalid
 
     // Use ViewModelProvider.Factory to pass the technicianId to the ViewModel
     val assignedIncidentsViewModel: AssignedIncidentsViewModel = viewModel(
@@ -81,7 +81,7 @@ fun AssignedIncidentsScreen(
 @Composable
 fun IncidentAssignedCard(
     incident: Incidente, // Cambiado de Incident a Incidente
-    onAttendClick: (Int) -> Unit // Cambiado a Int para pasar el código del incidente
+    onAttendClick: (String) -> Unit // Cambiado a Int para pasar el código del incidente
 ) {
     Card(
         modifier = Modifier
@@ -108,7 +108,7 @@ fun IncidentAssignedCard(
                 modifier = Modifier.padding(bottom = 4.dp)
             )
             Text(
-                text = "Area del usuario: ${incident.areaDeUsuario}", // Acceder a 'areaDeUsuario'
+                text = "Area del usuario: ${incident.areaUsuario}", // Acceder a 'areaDeUsuario'
                 fontSize = 12.sp,
                 color = Color.DarkGray,
                 modifier = Modifier.padding(bottom = 4.dp)
@@ -120,7 +120,7 @@ fun IncidentAssignedCard(
                 modifier = Modifier.padding(bottom = 8.dp)
             )
             Text(
-                text = "Código de Equipo: ${incident.codigoEquipo}", // Acceder a 'codigoEquipo'
+                text = "Nombre de Equipo: ${incident.nombreEquipo}", // Acceder a 'codigoEquipo'
                 fontSize = 12.sp,
                 color = Color.DarkGray,
                 modifier = Modifier.padding(bottom = 8.dp)
@@ -156,7 +156,7 @@ fun IncidentAssignedCard(
 fun PreviewAssignedIncidentsScreen() {
     FixPointTheme {
         // En el Preview, se necesita pasar un valor para loggedInTechnicianId
-        AssignedIncidentsScreen()
+        AssignedIncidentsScreen(userId = "")
     }
 }
 

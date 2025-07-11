@@ -24,6 +24,7 @@ import org.dsm.fixpoint.ui.viewmodel.LoginViewModel
 @Composable
 fun LoginScreen(
     onLoginSuccess : (userRole : String) -> Unit = {},
+    onRegisterClick: () -> Unit = {},
     loginViewModel: LoginViewModel = viewModel()
 ) {
     val userId by loginViewModel.loggedInUserId.collectAsState()
@@ -79,9 +80,11 @@ fun LoginScreen(
             TextField(
                 value = username,
                 onValueChange = { loginViewModel.onUsernameChange(it) },
-                label = { Text("Usuario") },
+                label = { Text(
+                    text ="Usuario",
+                    color = if (!isCorreo) Color.Red else LocalContentColor.current
+                ) },
                 singleLine = true,
-                isError = isCorreo,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 8.dp),
@@ -117,6 +120,20 @@ fun LoginScreen(
                 )
             ) {
                 Text("Ingresar", color = Color.White)
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            TextButton(
+                onClick = onRegisterClick, // Usa el callback para navegar
+                modifier = Modifier
+                    .fillMaxWidth(0.6f)
+                    .height(50.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Red
+                )
+            ) {
+                Text("Registrar nuevo usuario", color = Color.White)
             }
         }
     }

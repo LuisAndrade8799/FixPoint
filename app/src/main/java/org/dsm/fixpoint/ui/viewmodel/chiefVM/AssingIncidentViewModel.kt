@@ -1,13 +1,15 @@
 package org.dsm.fixpoint.ui.viewmodel.chiefVM
 
 import android.app.Application // Import Application
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel // Change ViewModel to AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import org.dsm.fixpoint.database.AppDatabase
+import kotlinx.coroutines.tasks.await
 import org.dsm.fixpoint.database.entities.Incidente // Import the Incidente entity
 
 // Change ViewModel() to AndroidViewModel(application: Application)
@@ -18,7 +20,8 @@ class AssignIncidentsViewModel(application: Application) : AndroidViewModel(appl
     val incidents: StateFlow<List<Incidente>> = _incidents.asStateFlow()
 
     // Get an instance of your AppDatabase and then the IncidenteDao
-    private val incidenteDao = AppDatabase.getDatabase(application).incidenteDao()
+
+    private val firestore : FirebaseFirestore = FirebaseFirestore.getInstance()
 
     init {
         loadUnassignedIncidents()
@@ -28,16 +31,33 @@ class AssignIncidentsViewModel(application: Application) : AndroidViewModel(appl
     fun loadUnassignedIncidents() {
         viewModelScope.launch {
             try {
-                // Fetch all incidents and filter those where codigoTecnico is null
-                incidenteDao.getAllIncidents().collect { allIncidents ->
-                    val unassignedIncidents = allIncidents.filter { it.codigoTecnico == null }
-                    _incidents.value = unassignedIncidents
+                val result = firestore.collection("incidente")
+                    .whereEqualTo("codigoTecnico", "") // Busca documentos donde codigoTecnico es una cadena vacía
+                    .get()
+                    .await()
+
+                val incidentesList = result.documents.mapNotNull { document ->
+                    try {
+                        Incidente(
+                            areaUsuario = document.getString("areaUsuario") ?: "",
+                            codigo = document.getString("codigo") ?: "",
+                            nombreEquipo = document.getString("nombreEquipo") ?: "",
+                            codigoTecnico = document.getString("codigoTecnico"), // Obtiene el valor, puede ser null
+                            descripcion = document.getString("descripcion") ?: "",
+                            estado = document.getString("estado") ?: "",
+                            nombreUsuario = document.getString("nombreUsuario") ?: ""
+                        )
+                    } catch (e: Exception) {
+                        Log.e("IncidenteViewModel", "Error al mapear documento a Incidente: ${document.id}", e)
+                        null
+                    }
                 }
+                _incidents.value = incidentesList
+                Log.d("IncidenteViewModel", "Incidentes sin técnico encontrados: ${incidentesList.size}")
+
             } catch (e: Exception) {
-                // Handle potential database errors (e.g., log, show error message)
-                println("Error loading unassigned incidents: ${e.localizedMessage}")
-                // Optionally, clear the list or show an error state
-                _incidents.value = emptyList()
+                Log.e("IncidenteViewModel", "Error al obtener incidentes sin técnico: ${e.message}", e)
+                _incidents.value = emptyList() // En caso de error, limpiar la lista
             }
         }
     }

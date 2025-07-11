@@ -1,14 +1,16 @@
 package org.dsm.fixpoint.ui.viewmodel.chiefVM
 
 import android.app.Application
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
-import org.dsm.fixpoint.database.AppDatabase
+import kotlinx.coroutines.tasks.await
 import org.dsm.fixpoint.database.entities.Incidente
 import org.dsm.fixpoint.database.entities.Usuario // Import Usuario entity
 
@@ -35,8 +37,7 @@ class AssignIncidentDetailViewModel(application: Application) : AndroidViewModel
     val assignmentSuccess: StateFlow<Boolean> = _assignmentSuccess.asStateFlow()
 
     // Database DAOs
-    private val incidenteDao = AppDatabase.getDatabase(application).incidenteDao()
-    private val usuarioDao = AppDatabase.getDatabase(application).usuarioDao()
+    private val firestore : FirebaseFirestore = FirebaseFirestore.getInstance()
 
     init {
         // Observe changes in all fields to enable/disable the assign button
@@ -58,12 +59,30 @@ class AssignIncidentDetailViewModel(application: Application) : AndroidViewModel
     private fun loadTechnicians() {
         viewModelScope.launch {
             try {
-                usuarioDao.getUsersByType("tecnico").collect { techList ->
-                    _technicians.value = techList
+                val result = firestore.collection("usuario")
+                    .whereEqualTo("tipo", "tecnico") // Busca documentos donde el campo 'tipo' es 'tecnico'
+                    .get()
+                    .await()
+
+                val userList = result.documents.mapNotNull { document ->
+                    // Mapea el documento a tu clase de datos Usuario
+                    try {
+                        Usuario(
+                            idUsuario = document.getString("idUsuario") ?: "",
+                            nombre = document.getString("nombre") ?: "",
+                            tipo = document.getString("tipo") ?: ""
+                        )
+                    } catch (e: Exception) {
+                        Log.e("UserViewModel", "Error al mapear documento a Usuario: ${document.id}", e)
+                        null
+                    }
                 }
+                _technicians.value = userList
+                Log.d("UserViewModel", "Técnicos encontrados: ${userList.size}")
+
             } catch (e: Exception) {
-                println("Error loading technicians: ${e.localizedMessage}")
-                _technicians.value = emptyList()
+                Log.e("UserViewModel", "Error al obtener usuarios técnicos: ${e.message}", e)
+                _technicians.value = emptyList() // En caso de error, limpiar la lista
             }
         }
     }
@@ -71,7 +90,7 @@ class AssignIncidentDetailViewModel(application: Application) : AndroidViewModel
     fun onTechnicianCodeChange(newCode: String) {
         _technicianCode.value = newCode
         // Auto-complete technician name when code changes
-        val selectedTechnician = _technicians.value.find { it.codigo.toString() == newCode }
+        val selectedTechnician = _technicians.value.find { it.idUsuario == newCode }
         _technicianName.value = selectedTechnician?.nombre ?: ""
     }
 
@@ -90,34 +109,29 @@ class AssignIncidentDetailViewModel(application: Application) : AndroidViewModel
         // Here you would implement your logic to assign the incident to the technician:
         _assignmentSuccess.value = false // Reset success flag
 
-        val currentIncidentCode = _incidentCode.value.toIntOrNull()
-        val currentTechnicianCode = _technicianCode.value.toIntOrNull()
+        val currentIncidentCode = _incidentCode.value
+        val currentTechnicianCode = _technicianCode.value
 
-        if (currentIncidentCode == null || currentTechnicianCode == null) {
+        if (currentIncidentCode == "" || currentTechnicianCode == "") {
             println("Assignment failed: Invalid incident or technician code.")
             return
         }
 
         viewModelScope.launch {
             try {
-                // Fetch the incident to update it
-                val incidentToUpdate = incidenteDao.getIncidentById(currentIncidentCode)
+                // Obtén la referencia al documento del incidente
+                val incidenteRef = firestore.collection("incidente").document(currentIncidentCode)
 
-                if (incidentToUpdate != null) {
-                    val updatedIncident = incidentToUpdate.copy(
-                        estado = "Asignado", // Change status to "Asignado"
-                        codigoTecnico = currentTechnicianCode // Assign the technician code
-                    )
-                    incidenteDao.updateIncidente(updatedIncident)
-                    println("Incident $currentIncidentCode assigned to technician $currentTechnicianCode successfully!")
-                    _assignmentSuccess.value = true // Indicate success
-                    clearFields() // Clear fields after successful assignment
-                } else {
-                    println("Incident with code $currentIncidentCode not found.")
-                }
+                // Crea un mapa con los campos a actualizar
+                val updates = hashMapOf<String, Any>(
+                    "codigoTecnico" to currentTechnicianCode
+                )
+
+                // Realiza la actualización del documento
+                incidenteRef.update(updates).await()
+
             } catch (e: Exception) {
-                println("Error assigning incident: ${e.localizedMessage}")
-                e.printStackTrace()
+                Log.e("IncidenteUpdateViewModel", "Error al actualizar código técnico para $currentIncidentCode", e)
             }
         }
     }

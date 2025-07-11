@@ -1,126 +1,122 @@
 package org.dsm.fixpoint.ui.viewmodel.technicianVM
 
 import android.app.Application
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel // Change to AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import org.dsm.fixpoint.database.AppDatabase // Import your AppDatabase
-import org.dsm.fixpoint.database.dao.IncidenteDao
+import kotlinx.coroutines.tasks.await
 import org.dsm.fixpoint.database.entities.Incidente
 
 class AttendIncidentViewModel(application: Application) : AndroidViewModel(application) {
-
-    private val incidenteDao: IncidenteDao = AppDatabase.getDatabase(application).incidenteDao()
-
-    // State for UI fields
-    private val _incidentCode = MutableStateFlow("")
-    val incidentCode: StateFlow<String> = _incidentCode.asStateFlow()
-
-    private val _username = MutableStateFlow("")
-    val username: StateFlow<String> = _username.asStateFlow()
-
-    private val _userArea = MutableStateFlow("")
-    val userArea: StateFlow<String> = _userArea.asStateFlow()
-
-    private val _description = MutableStateFlow("")
-    val description: StateFlow<String> = _description.asStateFlow()
 
     // Status message for UI feedback (success/error)
     private val _statusMessage = MutableStateFlow<String?>(null)
     val statusMessage: StateFlow<String?> = _statusMessage.asStateFlow()
 
     // The ID of the incident being attended, will be set via setIncidentId
-    private var currentIncidentId: Int? = null
+    private var currentIncidentId: String = ""
+
+    private val firestore : FirebaseFirestore = FirebaseFirestore.getInstance()
 
     // Hold the fetched incident to easily update its status and description
-    private var incident: Incidente? = null
+    private val _incident = MutableStateFlow<Incidente?>(null)
+    val incident: StateFlow<Incidente?> = _incident.asStateFlow()
 
     // Method to set incident ID and load details, similar to setIncidentCode in Assign
-    fun setIncidentId(id: Int?) {
+    fun setIncidentId(id: String) {
         if (currentIncidentId != id) { // Only load if ID changes
             currentIncidentId = id
-            id?.let {
-                loadIncidentDetails(it)
-            } ?: run {
-                clearIncidentDetails() // Clear if ID is null
-            }
+            loadIncidentDetails(id)
         }
     }
 
-    private fun loadIncidentDetails(id: Int) {
+    private fun loadIncidentDetails(id: String) {
         viewModelScope.launch {
             try {
-                incident = incidenteDao.getIncidentById(id)
-                if (incident != null) {
-                    _incidentCode.value = incident!!.codigo.toString()
-                    _username.value = incident!!.nombreUsuario
-                    _userArea.value = incident!!.areaDeUsuario
-                    _description.value = incident!!.descripcion
+                // Obtiene la referencia al documento directamente por su ID
+                val documentSnapshot = firestore.collection("incidente")
+                    .document(id)
+                    .get()
+                    .await()
+
+                if (documentSnapshot.exists()) {
+                    // Mapea el documento a tu clase de datos Incidente
+                    val incidenteEncontrado = Incidente(
+                        areaUsuario = documentSnapshot.getString("areaUsuario") ?: "",
+                        // El 'codigo' del documento es el ID del documento mismo
+                        codigo = documentSnapshot.getString("codigo") ?: id,
+                        nombreEquipo = documentSnapshot.getString("nombreEquipo") ?: "",
+                        codigoTecnico = documentSnapshot.getString("codigoTecnico"),
+                        descripcion = documentSnapshot.getString("descripcion") ?: "",
+                        estado = documentSnapshot.getString("estado") ?: "",
+                        nombreUsuario = documentSnapshot.getString("nombreUsuario") ?: ""
+                    )
+                    _incident.value = incidenteEncontrado
+
+                    Log.d("IncidenteDetailViewModel", "Incidente encontrado: ${incidenteEncontrado.codigo}")
                 } else {
-                    _statusMessage.value = "Incidente con código $id no encontrado."
-                    clearIncidentDetails()
+                    Log.d("IncidenteDetailViewModel", "Incidente no encontrado con código: $id")
                 }
+
             } catch (e: Exception) {
-                _statusMessage.value = "Error al cargar incidente: ${e.localizedMessage}"
-                println("Error loading incident: ${e.localizedMessage}")
-                e.printStackTrace()
+                val message = "Error al obtener el incidente por código: ${e.localizedMessage ?: "Error desconocido"}"
+                Log.e("IncidenteDetailViewModel", message, e)
             }
         }
     }
 
     fun onDescriptionChange(newDescription: String) {
-        _description.value = newDescription
-        // Update the in-memory incident object as well for immediate reflection
-        incident = incident?.copy(descripcion = newDescription)
+
     }
 
     fun onSolvedClick() {
+        val id = _incident.value?.codigo.toString()
         viewModelScope.launch {
-            incident?.let { currentIncident ->
-                try {
-                    val updatedIncident = currentIncident.copy(
-                        estado = "Solucionado",
-                        descripcion = _description.value // Use the current (potentially edited) description
-                    )
-                    incidenteDao.updateIncidente(updatedIncident)
-                    _statusMessage.value = "Incidente ${updatedIncident.codigo} marcado como SOLUCIONADO."
-                    println("Incident ${updatedIncident.codigo} marked as SOLVED! Final Description: ${updatedIncident.descripcion}")
-                    // Optionally, clear fields or navigate back here
-                    // clearIncidentDetails() // Uncomment if you want to clear after action
-                } catch (e: Exception) {
-                    _statusMessage.value = "Error al marcar como solucionado: ${e.localizedMessage}"
-                    println("Error marking as solved: ${e.localizedMessage}")
-                    e.printStackTrace()
-                }
-            } ?: run {
-                _statusMessage.value = "Error: No hay incidente cargado para marcar como solucionado."
+            try {
+                // Obtén la referencia al documento del incidente
+                val incidenteRef = firestore.collection("incidente").document(id)
+
+                // Crea un mapa con los campos a actualizar
+                val updates = hashMapOf<String, Any>(
+                    "estado" to "Solucionado"
+                )
+
+                // Realiza la actualización del documento
+                incidenteRef.update(updates).await()
+
+                Log.d("IncidenteStatusViewModel", "Estado de incidente $id actualizado a Solucionado")
+
+            } catch (e: Exception) {
+                Log.e("IncidenteStatusViewModel", "Error al actualizar estado de incidente $id", e)
             }
         }
     }
 
     fun onPendingClick() {
+        val id = _incident.value?.codigo.toString()
         viewModelScope.launch {
-            incident?.let { currentIncident ->
-                try {
-                    val updatedIncident = currentIncident.copy(
-                        estado = "Pendiente",
-                        descripcion = _description.value // Use the current (potentially edited) description
-                    )
-                    incidenteDao.updateIncidente(updatedIncident)
-                    _statusMessage.value = "Incidente ${updatedIncident.codigo} marcado como PENDIENTE."
-                    println("Incident ${updatedIncident.codigo} marked as PENDING! Notes: ${updatedIncident.descripcion}")
-                    // Optionally, clear fields or navigate back here
-                    // clearIncidentDetails() // Uncomment if you want to clear after action
-                } catch (e: Exception) {
-                    _statusMessage.value = "Error al marcar como pendiente: ${e.localizedMessage}"
-                    println("Error marking as pending: ${e.localizedMessage}")
-                    e.printStackTrace()
-                }
-            } ?: run {
-                _statusMessage.value = "Error: No hay incidente cargado para marcar como pendiente."
+            try {
+                // Obtén la referencia al documento del incidente
+
+                val incidenteRef = firestore.collection("incidente").document(id)
+
+                // Crea un mapa con los campos a actualizar
+                val updates = hashMapOf<String, Any>(
+                    "estado" to "Pendiente"
+                )
+
+                // Realiza la actualización del documento
+                incidenteRef.update(updates).await()
+
+                Log.d("IncidenteStatusViewModel", "Estado de incidente $id actualizado a Pendiente ")
+
+            } catch (e: Exception) {
+                Log.e("IncidenteStatusViewModel", "Error al actualizar estado de incidente $id", e)
             }
         }
     }
@@ -130,10 +126,6 @@ class AttendIncidentViewModel(application: Application) : AndroidViewModel(appli
     }
 
     private fun clearIncidentDetails() {
-        _incidentCode.value = ""
-        _username.value = ""
-        _userArea.value = ""
-        _description.value = ""
-        incident = null
+        _incident.value = null
     }
 }

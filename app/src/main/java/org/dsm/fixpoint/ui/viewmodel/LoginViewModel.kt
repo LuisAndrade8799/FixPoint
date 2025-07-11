@@ -1,22 +1,23 @@
 package org.dsm.fixpoint.ui.viewmodel
 
 import android.app.Application // Import Application
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel // Change ViewModel to AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-import org.dsm.fixpoint.database.AppDatabase
 
 // Change ViewModel() to AndroidViewModel(application: Application)
 class LoginViewModel(application: Application) : AndroidViewModel(application) {
 
 
-    private val _loggedInUserId = MutableStateFlow<Int?>(null)
-    val loggedInUserId: StateFlow<Int?> = _loggedInUserId
+    private val _loggedInUserId = MutableStateFlow<String?>(null)
+    val loggedInUserId: StateFlow<String?> = _loggedInUserId
 
     private val _name = MutableStateFlow("")
     val name: StateFlow<String> = _name
@@ -24,7 +25,7 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
     private val _username = MutableStateFlow("")
     val username: StateFlow<String> = _username
 
-    private val _isCorreo = MutableStateFlow(false)
+    private val _isCorreo = MutableStateFlow(true)
     val isCorreo: StateFlow<Boolean> = _isCorreo
 
     private val _password = MutableStateFlow("")
@@ -42,33 +43,28 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
     val loggedInUserRole: StateFlow<String?> = _loggedInUserRole
 
     private val firebaseAuth : FirebaseAuth = FirebaseAuth.getInstance()
-    // Get an instance of your AppDatabase and then the UsuarioDao
-    private val userDao = AppDatabase.getDatabase(application).usuarioDao()
+    private val firestore : FirebaseFirestore = FirebaseFirestore.getInstance()
 
     init {
         // Observe changes in username and password to enable/disable the login button
         viewModelScope.launch {
             combine(_username, _password) { user, pass ->
-                user.isNotBlank() && pass.isNotBlank()
+                user.isNotBlank() && pass.isNotBlank() && _isCorreo.value
             }.collect { isEnabled ->
                 _loginEnabled.value = isEnabled
             }
         }
     }
 
-    private fun checkCorreo(newUsername: String):Boolean{
+    fun checkCorreo(newUsername: String):Boolean{
         val emailRegex = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$".toRegex()
         return emailRegex.matches(newUsername)
     }
     fun onUsernameChange(newUsername: String) {
-        if (checkCorreo(newUsername)){
-            _username.value = newUsername
-            _loginMessage.value = null // Clear message when user starts typing again
-            _loggedInUserRole.value = null // Clear role when user starts typing again
-        }else{
-            _username.value = ""
-        }
-
+        _isCorreo.value = checkCorreo(newUsername)
+        _username.value = newUsername
+        _loginMessage.value = null // Clear message when user starts typing again
+        _loggedInUserRole.value = null // Clear role when user starts typing again
     }
 
     fun onPasswordChange(newPassword: String) {
@@ -92,28 +88,47 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
 
         viewModelScope.launch {
             try {
-                // Use Firebase Auth to sign in with email and password
-                val result = firebaseAuth.signInWithEmailAndPassword(currentUsername, currentPassword).await()
+                val authResult = firebaseAuth.signInWithEmailAndPassword(currentUsername, currentPassword).await()
 
-                if (result.user != null) {
-                    _loginMessage.value = "Inicio de sesión exitoso!"
-                    // You might fetch additional user data (like role) from Firestore or a Realtime Database here
-                    // For now, setting a placeholder role or fetching from a custom claim if you've set them up.
-                    _loggedInUserRole.value = "usuario_firebase" // Placeholder role
-                    _loggedInUserId.value = result.user?.uid.hashCode() // Using UID hash as an example ID
-                    _name.value = result.user?.displayName ?: currentUsername.substringBefore("@") // Use display name or part of email
+                val firebaseUser = authResult.user
+                if (firebaseUser != null) {
+                    val firebaseUid = firebaseUser.uid
+                    Log.d("LoginViewModel", "Firebase UID: $firebaseUid")
+
+                    // Query Firestore to get user details
+                    val userDocRef = firestore.collection("usuario").document(firebaseUid) // Use UID as document ID
+                    val documentSnapshot = userDocRef.get().await()
+
+                    if (documentSnapshot.exists()) {
+                        val idUsuario = documentSnapshot.getString("idUsuario")
+                        val nombre = documentSnapshot.getString("nombre")
+                        val tipo = documentSnapshot.getString("tipo")
+
+                        _loggedInUserId.value = idUsuario // Set idUsuario from Firestore
+                        _name.value = nombre ?: "" // Set name from Firestore
+                        _loggedInUserRole.value = tipo ?: "" // Set role from Firestore
+                        _loginMessage.value = "Inicio de sesión exitoso! Bienvenido, $nombre (${tipo ?: "usuario"})"
+
+                        Log.d("LoginViewModel", "Firestore Data: idUsuario=$idUsuario, nombre=$nombre, tipo=$tipo")
+                    } else {
+                        _loginMessage.value = "Inicio de sesión exitoso, pero no se encontraron detalles de usuario en Firestore. UID: $firebaseUid"
+                        // Fallback if no Firestore document is found for the UID
+                        _loggedInUserId.value = firebaseUid
+                        _name.value = firebaseUser.displayName ?: currentUsername.substringBefore("@")
+                        _loggedInUserRole.value = "usuario_firebase_sin_datos_firestore"
+                        Log.w("LoginViewModel", "No Firestore document found for UID: $firebaseUid")
+                    }
                 } else {
                     _loginMessage.value = "Error en el inicio de sesión. Credenciales incorrectas."
                 }
             } catch (e: Exception) {
-                // Handle Firebase Authentication specific errors
                 val errorMessage = when (e) {
                     is com.google.firebase.auth.FirebaseAuthInvalidUserException -> "No hay cuenta registrada con este correo electrónico."
                     is com.google.firebase.auth.FirebaseAuthInvalidCredentialsException -> "Contraseña incorrecta o correo electrónico inválido."
                     else -> "Error al intentar iniciar sesión: ${e.localizedMessage ?: "Error desconocido"}"
                 }
                 _loginMessage.value = errorMessage
-                e.printStackTrace()
+                Log.e("LoginViewModel", "Login error: ${e.message}", e)
             }
         }
     }

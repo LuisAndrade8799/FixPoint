@@ -61,7 +61,16 @@ class MainActivity : ComponentActivity() {
                                             navController.navigate("userMenu/$userName") { popUpTo("login") { inclusive = true } }
                                         }
                                     }
+                                },
+                                onRegisterClick = {
+                                    // Navegar a la pantalla de registro de usuario
+                                    navController.navigate("registerUser")
                                 }
+                            )
+                        }
+                        composable("registerUser") {
+                            RegisterUserScreen(
+                                onBackClick = { navController.popBackStack() } // Permite volver atrás
                             )
                         }
                         composable("areaChiefMenu") {
@@ -144,7 +153,7 @@ class MainActivity : ComponentActivity() {
                                 onAttendClick = { incident ->
                                     navController.navigate("attendIncident/${incident}")
                                 },
-                                userId = userId // Pass userId to AssignedIncidentsScreen
+                                userId = userId.toString() // Pass userId to AssignedIncidentsScreen
                             )
                         }
                         composable(
@@ -157,7 +166,7 @@ class MainActivity : ComponentActivity() {
                                 onAttendClick = { incident ->
                                     navController.navigate("attendPendingIncident/${incident}")
                                 },
-                                userId = userId // Pass userId to PendingIncidentsScreen
+                                userId = userId.toString() // Pass userId to PendingIncidentsScreen
                             )
                         }
                         composable(
@@ -166,7 +175,7 @@ class MainActivity : ComponentActivity() {
                         ) { backStackEntry ->
                             val incidentId = backStackEntry.arguments?.getString("incidentId")
                             AttendIncidentScreen(
-                                incidentId = incidentId,
+                                incidentId = incidentId.toString(),
                                 onBackClick = { navController.popBackStack() }
                             )
                         }

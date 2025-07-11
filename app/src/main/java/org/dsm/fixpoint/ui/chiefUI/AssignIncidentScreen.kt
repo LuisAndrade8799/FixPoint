@@ -28,7 +28,7 @@ fun AssignIncidentsScreen(
     assignIncidentsViewModel: AssignIncidentsViewModel = viewModel(),
     onBackClick: () -> Unit = {},
     // Change parameter type to Incidente.codigo (Int)
-    onAssignClick: (incidentCode: Int) -> Unit = {}
+    onAssignClick: (incidentCode: String) -> Unit = {}
 ) {
     val incidents by assignIncidentsViewModel.incidents.collectAsState()
 
@@ -81,7 +81,7 @@ fun AssignIncidentsScreen(
 }
 
 @Composable
-fun IncidentItem(incident: Incidente, onAssignClick: (incidentCode: Int) -> Unit) {
+fun IncidentItem(incident: Incidente, onAssignClick: (incidentCode: String) -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -105,7 +105,7 @@ fun IncidentItem(incident: Incidente, onAssignClick: (incidentCode: Int) -> Unit
                 modifier = Modifier.padding(bottom = 4.dp)
             )
             Text(
-                text = "Área del usuario: ${incident.areaDeUsuario}", // Use incident.areaDeUsuario
+                text = "Área del usuario: ${incident.areaUsuario}", // Use incident.areaDeUsuario
                 fontSize = 12.sp,
                 color = Color.DarkGray,
                 modifier = Modifier.padding(bottom = 4.dp)
@@ -117,7 +117,7 @@ fun IncidentItem(incident: Incidente, onAssignClick: (incidentCode: Int) -> Unit
                 modifier = Modifier.padding(bottom = 8.dp)
             )
             Text(
-                text = "Código de Equipo: ${incident.codigoEquipo}", // Display the equipment code
+                text = "Nombre de Equipo: ${incident.nombreEquipo}", // Display the equipment code
                 fontSize = 12.sp,
                 color = Color.DarkGray,
                 modifier = Modifier.padding(bottom = 8.dp)

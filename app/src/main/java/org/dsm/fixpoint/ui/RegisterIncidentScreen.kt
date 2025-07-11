@@ -65,7 +65,7 @@ fun RegisterIncidentScreen(
             OutlinedTextField(
                 value = equipmentCode,
                 onValueChange = { registerIncidentViewModel.onEquipmentCodeChange(it) },
-                label = { Text("Código de equipo:") },
+                label = { Text("Nombre de equipo:") },
                 singleLine = true,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -102,9 +102,9 @@ fun RegisterIncidentScreen(
                     } else {
                         technicians.forEach { user ->
                             DropdownMenuItem(
-                                text = { Text("${user.codigo} - ${user.nombre}") },
+                                text = { Text("${user.idUsuario} - ${user.nombre}") },
                                 onClick = {
-                                    registerIncidentViewModel.onTechnicianCodeChange(user.nombre.toString())
+                                    registerIncidentViewModel.onTechnicianCodeChange(user.idUsuario)
                                     expanded = false
                                 }
                             )

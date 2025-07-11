@@ -122,9 +122,9 @@ fun AssignIncidentDetailScreen(
                     } else {
                         technicians.forEach { user ->
                             DropdownMenuItem(
-                                text = { Text("${user.codigo} - ${user.nombre}") },
+                                text = { Text("${user.idUsuario} - ${user.nombre}") },
                                 onClick = {
-                                    assignIncidentDetailViewModel.onTechnicianCodeChange(user.codigo.toString())
+                                    assignIncidentDetailViewModel.onTechnicianCodeChange(user.idUsuario)
                                     expanded = false
                                 }
                             )

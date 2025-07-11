@@ -1,5 +1,6 @@
 package org.dsm.fixpoint.ui.technicianUI
 
+import android.R
 import android.app.Application
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
@@ -20,6 +21,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.google.android.recaptcha.internal.zzud
 import org.dsm.fixpoint.database.entities.Incidente
 import org.dsm.fixpoint.ui.theme.FixPointTheme
 import org.dsm.fixpoint.ui.viewmodel.technicianVM.AssignedIncidentsViewModel
@@ -30,12 +32,12 @@ import org.dsm.fixpoint.ui.viewmodel.technicianVM.PendingIncidentsViewModel
 @Composable
 fun PendingIncidentsScreen(
     onBackClick: () -> Unit = {}, // Lambda for back button navigation
-    onAttendClick: (Int) -> Unit = {},
-    userId : String? = "0"
+    onAttendClick: (String) -> Unit = {},
+    userId : String
 ) {
     val context = LocalContext.current
     val application = context.applicationContext as Application
-    val technicianId = userId?.toIntOrNull() ?: 0 // Convert userId to Int, default to 0 if null or invalid
+    val technicianId = userId // Convert userId to Int, default to 0 if null or invalid
 
     // Use ViewModelProvider.Factory to pass the technicianId to the ViewModel
     val pendingIncidentsViewModel: PendingIncidentsViewModel = viewModel(
@@ -90,7 +92,7 @@ fun PendingIncidentsScreen(
 @Composable
 fun PendingIncidentCard( // Renamed from AssignedIncidentCard
     incident: Incidente,
-    onAttendClick: (Int) -> Unit,
+    onAttendClick: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -121,7 +123,7 @@ fun PendingIncidentCard( // Renamed from AssignedIncidentCard
                 modifier = Modifier.padding(bottom = 4.dp)
             )
             Text(
-                text = "Area del usuario: ${incident.areaDeUsuario}",
+                text = "Area del usuario: ${incident.areaUsuario}",
                 fontSize = 12.sp,
                 color = Color.DarkGray,
                 modifier = Modifier.padding(bottom = 4.dp)
@@ -133,7 +135,7 @@ fun PendingIncidentCard( // Renamed from AssignedIncidentCard
                 modifier = Modifier.padding(bottom = 8.dp)
             )
             Text(
-                text = "Código de Equipo: ${incident.codigoEquipo}", // Acceder a 'codigoEquipo'
+                text = "Nombre de Equipo: ${incident.nombreEquipo}", // Acceder a 'codigoEquipo'
                 fontSize = 12.sp,
                 color = Color.DarkGray,
                 modifier = Modifier.padding(bottom = 8.dp)
@@ -166,7 +168,7 @@ fun PendingIncidentCard( // Renamed from AssignedIncidentCard
 @Composable
 fun PreviewPendingIncidentsScreen() {
     FixPointTheme {
-        PendingIncidentsScreen()
+        PendingIncidentsScreen(userId = "")
     }
 }
 
