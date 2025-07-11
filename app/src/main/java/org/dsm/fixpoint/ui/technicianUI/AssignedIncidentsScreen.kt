@@ -51,7 +51,8 @@ fun AssignedIncidentsScreen(
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF3F51B5)) // Deep blue for AppBar
             )
         }
     ) { paddingValues ->
