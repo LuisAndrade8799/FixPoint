@@ -24,7 +24,9 @@ import org.dsm.fixpoint.R
 fun AreaChiefMenuScreen(
     onRegisterIncidentsClick: () -> Unit = {},
     onAssignIncidentsClick: () -> Unit = {},
-    onLogoutClick: () -> Unit = {} // NEW: Logout click lambda
+    onLogoutClick: () -> Unit = {}, // NEW: Logout click lambda
+    onViewChartsClick: () -> Unit = {},
+    onViewStatusChartsClick: () -> Unit = {} // NUEVO: Para el gráfico de incidentes por estado
 ) {
     Box(
         modifier = Modifier
@@ -117,6 +119,75 @@ fun AreaChiefMenuScreen(
                     Text(
                         text = "Asignar Incidencias",
                         fontSize = 20.sp // Larger font size for buttons
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(32.dp)) // Increased space before logout button
+
+            Button(
+                onClick = onViewChartsClick,
+                modifier = Modifier
+                    .fillMaxWidth(0.8f)
+                    .height(60.dp)
+                    .padding(vertical = 8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Transparent,
+                    contentColor = Color.White
+                ),
+                contentPadding = PaddingValues(0.dp),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            brush = Brush.verticalGradient(
+                                colors = listOf(Color(0xFF4CAF50), Color(0xFF388E3C)) // Un gradiente verde
+                            ),
+                            shape = MaterialTheme.shapes.medium
+                        )
+                        .padding(horizontal = 20.dp, vertical = 12.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Ver Gráficos por areas",
+                        fontSize = 20.sp
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // NUEVO: Botón para "Gráfico por Estado"
+            Button(
+                onClick = onViewStatusChartsClick, // Usa la nueva lambda
+                modifier = Modifier
+                    .fillMaxWidth(0.8f)
+                    .height(60.dp)
+                    .padding(vertical = 8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Transparent,
+                    contentColor = Color.White
+                ),
+                contentPadding = PaddingValues(0.dp),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            brush = Brush.verticalGradient(
+                                colors = listOf(Color(0xFFFFC107), Color(0xFFFF8F00)) // Un gradiente naranja
+                            ),
+                            shape = MaterialTheme.shapes.medium
+                        )
+                        .padding(horizontal = 20.dp, vertical = 12.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Gráfico por Estado",
+                        fontSize = 20.sp
                     )
                 }
             }

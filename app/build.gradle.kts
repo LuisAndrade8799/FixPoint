@@ -67,6 +67,7 @@ dependencies {
     implementation(libs.firebase.crashlytics)
     annotationProcessor("androidx.room:room-compiler:2.7.2")
     ksp("androidx.room:room-compiler:2.7.2")
+    implementation("com.github.tehras:charts:0.2.4-alpha")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

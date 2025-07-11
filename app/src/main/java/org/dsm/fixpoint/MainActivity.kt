@@ -18,6 +18,8 @@ import org.dsm.fixpoint.ui.*
 import org.dsm.fixpoint.ui.chiefUI.AreaChiefMenuScreen
 import org.dsm.fixpoint.ui.chiefUI.AssignIncidentDetailScreen
 import org.dsm.fixpoint.ui.chiefUI.AssignIncidentsScreen
+import org.dsm.fixpoint.ui.dashboards.IncidentesChartScreen
+import org.dsm.fixpoint.ui.dashboards.IncidetesEstadoPieCharScreen
 import org.dsm.fixpoint.ui.technicianUI.AssignedIncidentsScreen
 import org.dsm.fixpoint.ui.technicianUI.AttendIncidentScreen
 import org.dsm.fixpoint.ui.technicianUI.AttendPendingIncidentScreen
@@ -86,6 +88,12 @@ class MainActivity : ComponentActivity() {
                                             inclusive = true // Clears the back stack up to the login screen
                                         }
                                     }
+                                },
+                                onViewChartsClick = { // NUEVO: Manejar la navegación al gráfico
+                                    navController.navigate("incidentCharts")
+                                },
+                                onViewStatusChartsClick = { // NUEVO: Navegar al gráfico por estado
+                                    navController.navigate("incidentStatusCharts")
                                 }
                             )
                         }
@@ -100,6 +108,16 @@ class MainActivity : ComponentActivity() {
                                 onPendingIncidentsClick = { id -> navController.navigate("pendingIncidents/$id") }, // Pass userId
                                 onLogoutClick = { navController.navigate("login") }, // Navigate to login on logout
                                 userId = userId // Pass userId to the Composable
+                            )
+                        }
+                        composable("incidentCharts") {
+                            IncidentesChartScreen(
+                                onBackClick = { navController.popBackStack() } // PASAR EL CALLBACK DE VOLVER
+                            ) // Tu Composable del gráfico
+                        }
+                        composable("incidentStatusCharts") {
+                            IncidetesEstadoPieCharScreen(
+                                onBackClick = { navController.popBackStack() } // Pasar el callback de volver
                             )
                         }
                         composable("userMenu/{userName}",
